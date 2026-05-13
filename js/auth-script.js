@@ -389,13 +389,52 @@ function socialLogin(provider) {
     }
 }
 
+// Initialize Google Sign-In
+function initGoogleSignIn() {
+    if (typeof google !== 'undefined') {
+        google.accounts.id.initialize({
+            client_id: "883807509960-bg31ba8sicarhupujk7c9if3dg29ifro.apps.googleusercontent.com",
+            callback: handleGoogleResponse,
+            context: 'signin',
+            ux_mode: 'popup',
+            auto_select: false
+        });
+        console.log('Google Sign-In Initialized');
+    }
+}
+
 // Google Login Implementation
 function googleLogin() {
-    google.accounts.id.initialize({
-        client_id: "883807509960-bg31ba8sicarhupujk7c9if3dg29ifro.apps.googleusercontent.com",
-        callback: handleGoogleResponse
-    });
-    google.accounts.id.prompt(); // Show One Tap or login popup
+    console.log('Attempting Google Login...');
+    if (typeof google !== 'undefined') {
+        // Initialize right before prompting to ensure client_id is never "missing"
+        google.accounts.id.initialize({
+            client_id: "883807509960-bg31ba8sicarhupujk7c9if3dg29ifro.apps.googleusercontent.com",
+            callback: handleGoogleResponse,
+            ux_mode: 'popup',
+            context: 'signin'
+        });
+
+        google.accounts.id.prompt((notification) => {
+            console.log('Google Prompt Status:', notification.getMomentType(), notification.getNotDisplayedReason());
+            if (notification.isNotDisplayed()) {
+                const reason = notification.getNotDisplayedReason();
+                console.warn('Google Prompt not displayed:', reason);
+                
+                // Fallback: If One Tap is suppressed or skipped, try to use the manual picker
+                if (reason === 'suppressed_by_user' || reason === 'skipped_by_user') {
+                    // Note: GSI doesn't have a direct "open picker" method without rendering a button.
+                    // We advise the user to clear cookies or we could render a hidden button.
+                    alert('Google login was dismissed. Try clearing your browser cookies or use a different browser.');
+                } else {
+                    alert('Google login failed: ' + reason);
+                }
+            }
+        });
+    } else {
+        console.error('Google SDK not loaded');
+        alert('Google Login is currently unavailable. Please refresh the page.');
+    }
 }
 
 function handleGoogleResponse(response) {
@@ -513,6 +552,9 @@ document.querySelectorAll('.social-btn').forEach(btn => {
 
 // Check if user is already logged in
 window.addEventListener('DOMContentLoaded', () => {
+    // Initialize social SDKs
+    initGoogleSignIn();
+
     const user = localStorage.getItem('reservehub_user');
     if (user && window.location.pathname.includes('login-signup')) {
         console.log('User already logged in:', user);
