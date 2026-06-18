@@ -15,7 +15,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 INSERT INTO `restaurants`
   (restaurant_id, vendor_id, name, description, cuisine, location, price_range,
-   seed_rating, opening_time, closing_time, opening_hours, image_url,
+   seed_rating, opening_time, closing_time, opening_hours, image_gradient, icon, image_url,
    status, is_halal, is_open)
 VALUES
 
@@ -28,6 +28,7 @@ VALUES
  '$',
  4.5,
  '07:00:00', '23:00:00', '7:00 AM – 11:00 PM',
+ 'linear-gradient(135deg,#6f4e37,#c0956c)', 'fa-mug-hot',
  '../pictures/restaurants/zus_coffee.png',
  'approved', 1, 1),
 
@@ -40,6 +41,7 @@ VALUES
  '$$',
  4.2,
  '08:00:00', '00:00:00', '8:00 AM – 12:00 AM',
+ 'linear-gradient(135deg,#da291c,#ffbc0d)', 'fa-burger',
  '../pictures/restaurants/mcdonalds_malaysia.png',
  'approved', 1, 1),
 
@@ -52,6 +54,7 @@ VALUES
  '$$',
  4.3,
  '10:00:00', '22:00:00', '10:00 AM – 10:00 PM',
+ 'linear-gradient(135deg,#6c3483,#af7ac5)', 'fa-bowl-rice',
  '../pictures/restaurants/nasi_kandar_pelita.png',
  'approved', 1, 1),
 
@@ -64,6 +67,7 @@ VALUES
  '$',
  4.1,
  '09:00:00', '23:00:00', '9:00 AM – 11:00 PM',
+ 'linear-gradient(135deg,#c0392b,#e74c3c)', 'fa-drumstick-bite',
  '../pictures/restaurants/texas_chicken.png',
  'approved', 1, 1),
 
@@ -76,6 +80,7 @@ VALUES
  '$',
  4.0,
  '08:00:00', '22:00:00', '8:00 AM – 10:00 PM',
+ 'linear-gradient(135deg,#e67e22,#d35400)', 'fa-drumstick-bite',
  '../pictures/restaurants/marrybrown.png',
  'approved', 1, 1);
 
