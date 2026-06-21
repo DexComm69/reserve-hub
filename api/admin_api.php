@@ -33,15 +33,17 @@ try {
 
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
-
 $endpoint = $_GET['endpoint'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 $data = json_decode(file_get_contents("php://input"), true) ?? [];
+
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    if (!($endpoint === 'messages' && $method === 'POST')) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+        exit;
+    }
+}
 
 try {
     switch ($endpoint) {
