@@ -960,7 +960,7 @@ async function loadInbox() {
     if (json.success) {
         allMessages = json.data || [];
         renderMessages(allMessages);
-        updateInboxBadge(allMessages.length);
+        updateInboxBadge(0);
     } else {
         const list = document.getElementById('messagesList');
         if (list) list.innerHTML = '<p style="color:var(--text-muted); padding: 20px; text-align: center;">Could not load messages. Please try again.</p>';
