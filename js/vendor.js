@@ -1,5 +1,56 @@
 // js/vendor.js - Vendor Dashboard with 2-step Restaurant Modal + Floor Plan Editor
 
+function downloadVendorPDF() {
+    const btn = document.getElementById('exportPdfBtn');
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+
+    const rests = document.getElementById('statRests').innerText;
+    const res   = document.getElementById('statReservations').innerText;
+    const pend  = document.getElementById('statPendingRests').innerText;
+
+    const printDiv = document.createElement('div');
+    printDiv.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:800px;background:#fff;color:#000;padding:40px;font-family:Arial,sans-serif;';
+    printDiv.innerHTML = `
+        <div style="text-align:center;margin-bottom:30px;border-bottom:2px solid #ccc;padding-bottom:20px;">
+            <h1 style="margin:0;font-size:28px;color:#333;">ReserveHub &mdash; Vendor Analytics Report</h1>
+            <p style="margin:5px 0 0;font-size:14px;color:#666;">Generated on: ${new Date().toLocaleString()}</p>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:40px;">
+            <div style="text-align:center;flex:1;border:1px solid #ddd;padding:20px;margin:0 10px;border-radius:8px;">
+                <h3 style="margin:0;font-size:16px;color:#555;text-transform:uppercase;">My Restaurants</h3>
+                <p style="margin:10px 0 0;font-size:32px;font-weight:bold;color:#000;">${rests}</p>
+            </div>
+            <div style="text-align:center;flex:1;border:1px solid #ddd;padding:20px;margin:0 10px;border-radius:8px;">
+                <h3 style="margin:0;font-size:16px;color:#555;text-transform:uppercase;">Total Reservations</h3>
+                <p style="margin:10px 0 0;font-size:32px;font-weight:bold;color:#000;">${res}</p>
+            </div>
+            <div style="text-align:center;flex:1;border:1px solid #ddd;padding:20px;margin:0 10px;border-radius:8px;">
+                <h3 style="margin:0;font-size:16px;color:#555;text-transform:uppercase;">Pending Approvals</h3>
+                <p style="margin:10px 0 0;font-size:32px;font-weight:bold;color:#000;">${pend}</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(printDiv);
+
+    html2canvas(printDiv, { backgroundColor: '#fff', scale: 2, useCORS: true, logging: false })
+        .then(canvas => {
+            const { jsPDF } = window.jspdf;
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const w = pdf.internal.pageSize.getWidth();
+            pdf.addImage(imgData, 'PNG', 0, 0, w, (canvas.height * w) / canvas.width);
+            pdf.save('ReserveHub_Vendor_Report.pdf');
+            document.body.removeChild(printDiv);
+            btn.disabled = false; btn.innerHTML = orig;
+        }).catch(err => {
+            console.error('PDF generation failed:', err);
+            if (document.body.contains(printDiv)) document.body.removeChild(printDiv);
+            btn.disabled = false; btn.innerHTML = orig;
+        });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // =========================================================
@@ -116,18 +167,29 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadStats() {
         Promise.all([
             fetch(`../api/vendor_api.php?endpoint=restaurants`).then(r => r.json()),
-            fetch(`../api/vendor_api.php?endpoint=reservations`).then(r => r.json())
-        ]).then(([rr, resr]) => {
-            if (rr.success)   { vendorRestaurants  = rr.data   || []; document.getElementById('statRests').innerText = vendorRestaurants.length; document.getElementById('statPendingRests').innerText = vendorRestaurants.filter(r => r.status === 'pending').length; }
-            if (resr.success) { vendorReservations = resr.data || []; document.getElementById('statReservations').innerText = vendorReservations.length; }
-            
-            drawVendorChart();
+            fetch(`../api/vendor_api.php?endpoint=reservations`).then(r => r.json()),
+            fetch(`../api/vendor_api.php?endpoint=reservation_history`).then(r => r.json())
+        ]).then(([rr, resr, histr]) => {
+            if (rr.success) {
+                vendorRestaurants = rr.data || [];
+                document.getElementById('statRests').innerText = vendorRestaurants.length;
+            }
+            const activeRes  = resr.success  ? (resr.data  || []) : [];
+            const historyRes = histr.success ? (histr.data || []) : [];
+            vendorReservations = activeRes;
+            // Total = all reservations ever (active + past)
+            document.getElementById('statReservations').innerText = activeRes.length + historyRes.length;
+            // Pending Approvals = reservation requests awaiting vendor Accept/Cancel
+            document.getElementById('statPendingRests').innerText = activeRes.filter(r => r.status === 'pending').length;
+            // Chart uses all reservations (active + history) for accurate per-restaurant counts
+            drawVendorChart([...activeRes, ...historyRes]);
         }).catch(err => { console.error(err); showToast('Failed to load stats.', 'error'); });
     }
 
-    function drawVendorChart() {
+    function drawVendorChart(allRes) {
+        const source = allRes || vendorReservations;
         const restCounts = {};
-        vendorReservations.forEach(r => {
+        source.forEach(r => {
             const name = r.restaurant_name || 'Unknown';
             restCounts[name] = (restCounts[name] || 0) + 1;
         });
@@ -167,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
 
     // =========================================================
     // 6. RESTAURANTS LIST
@@ -217,14 +280,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span><i class="fa-solid fa-clock"></i> ${rest.opening_time ? rest.opening_time.slice(0,5) : '—'}</span>
                     </div>
                     <div style="display:flex;gap:8px;margin-bottom:10px;">
-                        <button class="btn btn-primary" style="flex:1;font-size:13px;background:${isOpen?'transparent':'#2ecc71'};border-color:${isOpen?'#e74c3c':'#2ecc71'};color:${isOpen?'#e74c3c':'#fff'};" onclick="toggleRestaurantOpen(${rest.id}, ${isOpen ? 0 : 1})">
+                        <button class="btn btn-primary" style="flex:1;font-size:13px;background:${isOpen?'transparent':'#2ecc71'};border-color:${isOpen?'#e74c3c':'#2ecc71'};color:${isOpen?'#e74c3c':'#fff'};" onclick="toggleRestaurantOpen('${rest.id}', ${isOpen ? 0 : 1})">
                             <i class="fa-solid ${isOpen?'fa-door-closed':'fa-door-open'}"></i> Mark as ${isOpen?'Closed':'Open'}
                         </button>
                     </div>
                     <div style="display:flex;gap:8px;">
-                        <button class="btn btn-primary" style="flex:1;font-size:13px;" onclick="editRestaurant(${rest.id})"><i class="fa-solid fa-pen"></i> Edit</button>
-                        <button class="btn btn-primary" style="flex:1;font-size:13px;" onclick="editFloorPlan(${rest.id})"><i class="fa-solid fa-table-cells"></i> Floor</button>
-                        <button class="btn btn-primary" style="flex:1;font-size:13px;background:transparent;border:1px solid #ff4757;color:#ff4757;" onclick="deleteRestaurant(${rest.id})"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn btn-primary" style="flex:1;font-size:13px;" onclick="editRestaurant('${rest.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button class="btn btn-primary" style="flex:1;font-size:13px;" onclick="editFloorPlan('${rest.id}')"><i class="fa-solid fa-table-cells"></i> Floor</button>
+                        <button class="btn btn-primary" style="flex:1;font-size:13px;background:transparent;border:1px solid #ff4757;color:#ff4757;" onclick="deleteRestaurant('${rest.id}')"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>`;
             grid.appendChild(card);
@@ -284,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div'); card.className = 'admin-card';
             card.style.cssText = 'display:flex;flex-direction:row;align-items:center;padding:20px;gap:20px;flex-wrap:wrap;';
             const sc = res.status === 'confirmed' ? 'approved' : (res.status === 'pending' ? 'pending' : 'rejected');
-            card.innerHTML = `<div style="flex:1;min-width:220px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span class="status-badge ${sc}">${res.status}</span><span style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-store"></i> ${escHtml(res.restaurant_name)}</span></div><h3 style="margin-bottom:4px;">${escHtml(res.user_name)}</h3><p style="color:var(--text-muted);font-size:13px;"><i class="fa-solid fa-phone"></i> ${escHtml(res.user_phone||'—')}</p></div><div style="flex:1;min-width:180px;font-size:14px;display:flex;flex-direction:column;gap:6px;"><div><i class="fa-solid fa-calendar"></i> <strong>Date:</strong> ${res.date}</div><div><i class="fa-solid fa-clock"></i> <strong>Time:</strong> ${res.time}</div></div><div style="flex:1;min-width:150px;font-size:14px;display:flex;flex-direction:column;gap:6px;"><div><i class="fa-solid fa-users"></i> <strong>Guests:</strong> ${res.guests}</div><div><i class="fa-solid fa-chair"></i> <strong>Table:</strong> ${escHtml(res.table_number)}</div></div><div style="display:flex;gap:10px;flex-wrap:wrap;">${res.status==='pending'?`<button class="btn btn-primary" style="background:#2ecc71;border-color:#2ecc71;" onclick="updateReservation(${res.id},'confirmed')"><i class="fa-solid fa-check"></i> Accept</button>`:''} ${res.status!=='cancelled'?`<button class="btn btn-primary" style="background:transparent;border:1px solid #ff4757;color:#ff4757;" onclick="updateReservation(${res.id},'cancelled')"><i class="fa-solid fa-times"></i> Cancel</button>`:''}</div>`;
+            card.innerHTML = `<div style="flex:1;min-width:220px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span class="status-badge ${sc}">${res.status}</span><span style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-store"></i> ${escHtml(res.restaurant_name)}</span></div><h3 style="margin-bottom:4px;">${escHtml(res.user_name)}</h3><p style="color:var(--text-muted);font-size:13px;"><i class="fa-solid fa-phone"></i> ${escHtml(res.user_phone||'—')}</p></div><div style="flex:1;min-width:180px;font-size:14px;display:flex;flex-direction:column;gap:6px;"><div><i class="fa-solid fa-calendar"></i> <strong>Date:</strong> ${res.date}</div><div><i class="fa-solid fa-clock"></i> <strong>Time:</strong> ${res.time}</div></div><div style="flex:1;min-width:150px;font-size:14px;display:flex;flex-direction:column;gap:6px;"><div><i class="fa-solid fa-users"></i> <strong>Guests:</strong> ${res.guests}</div><div><i class="fa-solid fa-chair"></i> <strong>Table:</strong> ${escHtml(res.table_number)}</div></div><div style="display:flex;gap:10px;flex-wrap:wrap;">${res.status==='pending'?`<button class="btn btn-primary" style="background:#2ecc71;border-color:#2ecc71;" onclick="updateReservation('${res.id}','confirmed')"><i class="fa-solid fa-check"></i> Accept</button>`:''} ${res.status!=='cancelled'?`<button class="btn btn-primary" style="background:transparent;border:1px solid #ff4757;color:#ff4757;" onclick="updateReservation('${res.id}','cancelled')"><i class="fa-solid fa-times"></i> Cancel</button>`:''}</div>`;
             c.appendChild(card);
         });
     }
@@ -524,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        currentRestId = parseInt(restId);
+        currentRestId = restId;
         
         // Check if this restaurant is open — if so, disable editing
         const selectedRest = vendorRestaurants.find(r => r.id == restId);
@@ -580,7 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <strong style="color:#ff6b2b;">${escHtml(restName)}</strong> is currently <span style="color:#2ecc71;font-weight:bold;">Open</span>.<br>
                         You must mark the restaurant as <strong style="color:#e74c3c;">Closed</strong> before editing the floor plan.
                     </p>
-                    <button onclick="toggleRestaurantOpen(${currentRestId}, 0)" style="
+                    <button onclick="toggleRestaurantOpen('${currentRestId}', 0)" style="
                         background:#e74c3c;color:#fff;border:none;border-radius:8px;
                         padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;
                         transition:all 0.2s;

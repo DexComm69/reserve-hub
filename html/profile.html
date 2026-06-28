@@ -82,9 +82,9 @@
 
             <div class="profile-content">
                 <div class="dashboard-card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 10px;">
                         <h2 style="margin: 0;"><i class="fa-regular fa-calendar-check"></i> My Reservations</h2>
-                        <input type="text" id="searchMyReservations" placeholder="Search reservations..." style="width:200px; background: #2a2a2a; color: white; border: 1px solid #333; padding: 8px 12px; border-radius: 8px; font-family: 'Alexandria', sans-serif; font-size: 0.9rem;" onkeyup="filterMyReservations()">
+                        <input type="text" id="searchMyReservations" placeholder="Search restaurant..." style="width:200px; max-width: 40%; background: #2a2a2a; color: white; border: 1px solid #333; padding: 8px 12px; border-radius: 8px; font-family: 'Alexandria', sans-serif; font-size: 0.9rem;" onkeyup="filterMyReservations()">
                     </div>
                     <div class="card-body">
                         <div id="reservationsList">
@@ -98,9 +98,9 @@
                 </div>
 
                 <div class="dashboard-card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 10px;">
                         <h2 style="margin: 0;"><i class="fa-regular fa-heart"></i> Saved Restaurants</h2>
-                        <input type="text" id="searchSavedRestaurants" placeholder="Search restaurants..." style="width:200px; background: #2a2a2a; color: white; border: 1px solid #333; padding: 8px 12px; border-radius: 8px; font-family: 'Alexandria', sans-serif; font-size: 0.9rem;" onkeyup="filterSavedRestaurants()">
+                        <input type="text" id="searchSavedRestaurants" placeholder="Search restaurants..." style="width:200px; max-width: 40%; background: #2a2a2a; color: white; border: 1px solid #333; padding: 8px 12px; border-radius: 8px; font-family: 'Alexandria', sans-serif; font-size: 0.9rem;" onkeyup="filterSavedRestaurants()">
                     </div>
                     <div class="card-body">
                         <div id="savedRestaurantsList" class="restaurants-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px;">
@@ -231,17 +231,26 @@
                     
                     const isPast = new Date(res.date + ' ' + res.time) < new Date();
                     
+                    let statusDisplay = `<span style="color: #f39c12; font-size: 0.8rem;">Pending</span>`;
+                    if (res.status === 'confirmed') statusDisplay = `<span style="color: #27ae60; font-size: 0.8rem;">Confirmed</span>`;
+                    else if (res.status === 'cancelled') statusDisplay = `<span style="color: #e74c3c; font-size: 0.8rem;">Cancelled</span>`;
+                    else if (res.status === 'completed') statusDisplay = `<span style="color: #3498db; font-size: 0.8rem;">Completed</span>`;
+
+                    if (isPast && (res.status === 'confirmed' || res.status === 'completed')) {
+                        statusDisplay = `<button class="review-btn" onclick="openReviewModal(${res.id}, ${res.restaurant_id})" style="background: transparent; border: 1px solid var(--orange); color: var(--orange); padding: 5px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Review</button>`;
+                    }
+                    
                     resCard.innerHTML = `
                         <img src="${res.image_url}" style="width: 80px; height: 60px; object-fit: cover; border-radius: 8px;">
                         <div style="flex: 1;">
                             <h4 style="margin: 0; font-size: 1rem;">${res.restaurant_name}</h4>
                             <p style="margin: 4px 0; font-size: 0.85rem; color: #888;">
-                                <i class="fa-regular fa-calendar"></i> ${res.date} | <i class="fa-regular fa-clock"></i> ${res.time.slice(0,5)}
+                                <i class="fa-regular fa-calendar"></i> ${res.date} | <i class="fa-regular fa-clock"></i> ${res.time ? res.time.slice(0,5) : ''}
                             </p>
                             <p style="margin: 0; font-size: 0.8rem; color: var(--orange);">Table ${res.table_number} | ${res.guests} Guests</p>
                         </div>
                         <div>
-                            ${isPast ? `<button class="review-btn" onclick="openReviewModal(${res.id}, ${res.restaurant_id})" style="background: transparent; border: 1px solid var(--orange); color: var(--orange); padding: 5px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Review</button>` : `<span style="color: #27ae60; font-size: 0.8rem;">Upcoming</span>`}
+                            ${statusDisplay}
                         </div>
                     `;
                     list.appendChild(resCard);

@@ -758,7 +758,7 @@ function renderUsers(data) {
                 <td>
                     <div style="display: flex; gap: 8px;">
                         <button class="action-btn edit" style="margin: 0; padding: 4px 8px; font-size: 12px;" onclick='editUser(${JSON.stringify(u).replace(/'/g, "&apos;")})'><i class="fa-solid fa-pen"></i></button>
-                        <button class="action-btn delete" style="margin: 0; padding: 4px 8px; font-size: 12px;" onclick="deleteUser(${u.id})"><i class="fa-solid fa-trash"></i></button>
+                        <button class="action-btn delete" style="margin: 0; padding: 4px 8px; font-size: 12px;" onclick="deleteUser('${u.id}')"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </td>
             </tr>
@@ -1014,14 +1014,14 @@ function renderMessages(data) {
                         <span style="font-size: 0.8rem; color: #888;">
                             <i class="fa-regular fa-clock"></i> ${new Date(r.created_at).toLocaleString()}
                         </span>
-                        <span style="font-size: 0.75rem; color: #666;">ID: #${r.id}</span>
+                        <span style="font-size: 0.75rem; color: #666;">ID: #${r.message_id}</span>
                     </div>
                 </div>
                 <div style="font-size: 0.92rem; color: #ccc; line-height: 1.6; white-space: pre-wrap; padding: 5px 0 10px 0;">
                     ${r.message}
                 </div>
                 <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--glass-border); padding-top: 12px;">
-                    <button class="action-btn delete" onclick="deleteMessage(${r.id})" title="Delete Message" style="margin: 0; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <button class="action-btn delete" onclick="deleteMessage('${r.message_id}')" title="Delete Message" style="margin: 0; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
                         <i class="fa-solid fa-trash"></i> Delete
                     </button>
                 </div>
@@ -1037,7 +1037,7 @@ function filterMessages() {
         r.email.toLowerCase().includes(q) ||
         r.subject.toLowerCase().includes(q) ||
         r.message.toLowerCase().includes(q) ||
-        r.id.toString().includes(q)
+        (r.message_id && r.message_id.toString().includes(q))
     );
     renderMessages(filtered);
 }
