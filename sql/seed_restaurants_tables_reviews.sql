@@ -23,7 +23,7 @@ VALUES
 ('r001', 'c004',
  'ZUS Coffee',
  'Malaysia''s fastest-growing home-grown coffee chain, known for its premium quality coffee at affordable prices. From signature cold brews to creamy lattes, ZUS brings specialty coffee to everyone.',
- 'Café & Beverages',
+ 'Cafe & Beverages',
  'Pavilion Bukit Jalil, Kuala Lumpur',
  '$',
  4.5,
@@ -85,7 +85,7 @@ VALUES
 -- =============================================================================
 
 -- ─────────────────────────────────────────────
--- R1: ZUS Coffee — Kiosk/Café style
+-- R1: ZUS Coffee — Kiosk/Cafe style
 -- Small round tables, tight cluster, narrow canvas (low x, low y)
 -- Great for solo and pair seating
 -- ─────────────────────────────────────────────

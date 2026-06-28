@@ -38,6 +38,7 @@
         <section id="dashboard" class="admin-section active">
             <div class="admin-header">
                 <h1 id="welcomeText">Vendor Overview</h1>
+                <button class="btn btn-primary" onclick="downloadVendorPDF()" id="exportPdfBtn"><i class="fa-solid fa-file-pdf"></i> Export Report to PDF</button>
             </div>
             <div class="stats-grid">
                 <div class="stat-card">
@@ -57,7 +58,7 @@
                 <div class="stat-card">
                     <div class="stat-icon" style="background: rgba(241, 196, 15, 0.1); color: #f1c40f;"><i class="fa-solid fa-clock"></i></div>
                     <div class="stat-info">
-                        <h3>Pending Approvals</h3>
+                    <h3>Pending Reservations</h3>
                         <div class="stat-val" id="statPendingRests">0</div>
                     </div>
                 </div>
@@ -223,6 +224,8 @@
     <!-- Alert / Toast Modal -->
     <div id="toast" class="toast-notification"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="../js/theme.js"></script>
     <script src="../js/vendor.js"></script>
 </body>

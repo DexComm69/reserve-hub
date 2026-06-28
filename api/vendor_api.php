@@ -208,8 +208,8 @@ try {
                     exit;
                 }
 
-                $updateStmt = $pdo->prepare("UPDATE reservations SET status = ?, managed_by = ? WHERE booking_id = ?");
-                $updateStmt->execute([$status, $userId, $reservationId]);
+                $updateStmt = $pdo->prepare("UPDATE reservations SET status = ?, managed_by = NULL WHERE booking_id = ?");
+                $updateStmt->execute([$status, $reservationId]);
                 echo json_encode(['success' => true, 'message' => 'Reservation status updated successfully.']);
             }
             break;
